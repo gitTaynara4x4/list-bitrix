@@ -3,46 +3,59 @@ import requests
 
 app = Flask(__name__)
 
-# Função para obter os dados do campo 'UF_CRM_1699475211222'
+# Função para pegar os responsáveis
 def get_responsaveis():
-    url = "https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/crm.deal.fields"
-    response = requests.get(url)
-    data = response.json()
-
-    # Extrai os valores (nomes) do campo 'UF_CRM_1699475211222'
-    campo_lista = data['result']['UF_CRM_1699475211222']['items']
-    nomes = [item['VALUE'] for item in campo_lista]
+    url = 'https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/crm.deal.fields'
+    headers = {
+        'Content-Type': 'application/json'
+    }
     
-    return nomes
+    # Requisição GET para pegar os responsáveis (UF_CRM_1699475211222)
+    response = requests.get(url, headers=headers)
+    
+    if response.status_code == 200:
+        data = response.json()
+        responsaveis_field = data.get('result', {}).get('UF_CRM_1699475211222', {}).get('items', [])
+        
+        # Extraindo os nomes dos responsáveis
+        nomes = [item['VALUE'] for item in responsaveis_field]
+        return nomes
+    else:
+        raise Exception(f"Erro ao buscar responsáveis: {response.status_code} - {response.text}")
 
-# Função para atualizar o campo 'UF_CRM_1732282217' de um negócio específico
+# Função para atualizar o campo do negócio
 def update_deal_field(deal_id, nomes):
-    # URL para atualizar o campo do negócio
-    update_url = "https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/crm.deal.update"
-
-    update_data = {
-        "id": deal_id,
-        "fields": {
-            "UF_CRM_1732282217": nomes  # Atualizando com os nomes extraídos
+    url = f'https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/crm.deal.update.json'
+    
+    # Dados para atualizar o campo 'UF_CRM_1732282217' com os nomes dos responsáveis
+    data = {
+        'ID': deal_id,
+        'FIELDS': {
+            'UF_CRM_1732282217': ', '.join(nomes)
         }
     }
+    
+    # Requisição POST para atualizar o negócio
+    response = requests.post(url, json=data)
+    
+    if response.status_code == 200:
+        return response.json()
+    else:
+        raise Exception(f"Erro ao atualizar o negócio: {response.status_code} - {response.text}")
 
-    # Faz a requisição POST para atualizar o campo
-    response_update = requests.post(update_url, data=update_data)
-    return response_update.json()
-
-# Rota para pegar e atualizar os dados
 @app.route('/atualizar-responsaveis', methods=['POST'])
 def atualizar_responsaveis():
-    # Obtém os dados enviados na requisição
+    # Tenta obter os dados da requisição
     data = request.json
-    deal_id = data.get('deal_id')
-
-    if not deal_id:
+    
+    # Verificar se os dados foram recebidos corretamente e se contém 'deal_id'
+    if not data or 'deal_id' not in data:
         return jsonify({"error": "deal_id é necessário"}), 400
-
+    
+    deal_id = data['deal_id']
+    
     try:
-        # Pega os responsáveis do campo 'UF_CRM_1699475211222'
+        # Pega os responsáveis
         nomes = get_responsaveis()
 
         # Atualiza o campo 'UF_CRM_1732282217' do negócio
@@ -50,12 +63,8 @@ def atualizar_responsaveis():
 
         return jsonify(result)
     except Exception as e:
+        # Caso ocorra algum erro nas funções de buscar ou atualizar, retorna o erro
         return jsonify({"error": str(e)}), 500
 
-# Rota principal (para testar se a API está funcionando)
-@app.route('/')
-def index():
-    return jsonify({"message": "API para atualizar campos do Bitrix24."})
-
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8858)
+    app.run(debug=True, host='0.0.0.0', port=8858)
