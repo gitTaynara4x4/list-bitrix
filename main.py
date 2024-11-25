@@ -3,69 +3,40 @@ import requests
 
 app = Flask(__name__)
 
-# Lista de IDs e seus valores correspondentes
-items = [
-    {"ID": "148", "VALUE": "Geovanna Emanuelly"},
-    {"ID": "154", "VALUE": "Gustavo Inácio"},
-    {"ID": "158", "VALUE": "Felipe Marchezine"},
-    {"ID": "34874", "VALUE": "Taynara Francine"},
-    {"ID": "43180", "VALUE": "Sabrina Emanuelle"},
-    {"ID": "48604", "VALUE": "Ian Henrique"},
-    {"ID": "48618", "VALUE": "Tiago Martins"},
-    {"ID": "48674", "VALUE": "Caio Sales"},
-    {"ID": "49718", "VALUE": "Italo Almeida"},
-    {"ID": "48678", "VALUE": "Jéssica Hellen"},
-    {"ID": "49722", "VALUE": "Laisa Reis"},
-    {"ID": "34794", "VALUE": "Treinamento 01"},
-    {"ID": "48596", "VALUE": "Treinamento 02"},
-    {"ID": "48610", "VALUE": "Treinamento 03"},
-    {"ID": "48612", "VALUE": "Treinamento 04"}
-]
-
-# Webhook do Bitrix24
-webhook_url = "https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/"
-
-# Função para atualizar o card no Bitrix24
-def update_deal(deal_id, value):
-    url = f"{webhook_url}crm.deal.update.json"
+# Função que atualiza o campo de um negócio no Bitrix24
+def update_bitrix24_deal(deal_id, responsable_value):
+    url = "https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/"
+    
+    # Parâmetros para a requisição para o Bitrix24
     data = {
         "ID": deal_id,
-        "FIELDS": {
-            "UF_CRM_1732282217": value
+        "fields": {
+            "UF_CRM_1732282217": responsable_value
         }
     }
+    
+    # Fazendo a requisição POST para o webhook do Bitrix24
     response = requests.post(url, json=data)
+    
+    return response
+
+@app.route('/copy-field', methods=['GET'])
+def copy_field():
+    # Recebe o ID do negócio e o valor do responsável pela venda da URL
+    deal_id = request.args.get('deal_id')
+    responsable_value = request.args.get('responsable_value')
+    
+    # Valida se os parâmetros necessários foram passados
+    if not deal_id or not responsable_value:
+        return jsonify({"error": "Missing parameters. 'deal_id' and 'responsable_value' are required."}), 400
+    
+    # Chama a função para atualizar o campo no Bitrix24
+    response = update_bitrix24_deal(deal_id, responsable_value)
+    
     if response.status_code == 200:
-        return {"status": "success", "message": f"Card {deal_id} atualizado com sucesso!"}
+        return jsonify({"success": "Field updated successfully!"}), 200
     else:
-        return {"status": "error", "message": f"Erro ao atualizar o card {deal_id}: {response.status_code}"}
+        return jsonify({"error": "Failed to update field", "details": response.json()}), 500
 
-# Função para verificar o ID e atualizar o campo
-def check_and_update_card(deal_id, uf_value):
-    # Verificar se o valor de UF_CRM_1699475211222 corresponde a um dos valores da lista
-    for item in items:
-        if item["ID"] == uf_value:
-            return update_deal(deal_id, item["VALUE"])
-    return {"status": "error", "message": "ID não encontrado na lista de valores."}
-
-# Endpoint da API que recebe o ID do card e o valor de UF_CRM_1699475211222
-@app.route('/update_card', methods=['POST'])
-def update_card():
-    # Receber dados do JSON enviado na requisição
-    data = request.get_json()
-    
-    # Validar os campos
-    if 'deal_id' not in data or 'uf_value' not in data:
-        return jsonify({"status": "error", "message": "Parâmetros 'deal_id' e 'uf_value' são obrigatórios."}), 400
-
-    deal_id = data['deal_id']
-    uf_value = str(data['uf_value'])  # Garantir que o valor seja uma string
-
-    # Chamar a função de verificação e atualização
-    result = check_and_update_card(deal_id, uf_value)
-    
-    return jsonify(result)
-
-# Rodar o servidor Flask
-if __name__ == "__main__":
-    app.run(port=8858, host ='0.0.0.0')
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=8858)
