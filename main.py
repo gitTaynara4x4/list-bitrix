@@ -20,23 +20,14 @@ def get_responsaveis(deal_id):
             print("Campo UF_CRM_1699475211222 não encontrado na resposta")
             return []
 
-        # Debug: Exibe todos os responsáveis disponíveis
-        print("Responsáveis disponíveis:", responsaveis)
-
         # Buscar os valores do campo UF_CRM_1699475211222 para o deal_id
         deal_url = f"https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/crm.deal.get"
         deal_params = {"ID": deal_id}
         deal_response = requests.get(deal_url, params=deal_params)
         deal_data = deal_response.json()
 
-        # Debug: Exibe os dados do deal
-        print("Dados do deal:", deal_data)
-
         # Pegando os responsáveis do campo UF_CRM_1699475211222 do negócio
         responsaveis_selecionados = deal_data.get("result", {}).get("UF_CRM_1699475211222", [])
-
-        # Debug: Exibe os responsáveis selecionados no deal
-        print(f"Responsáveis selecionados para o deal {deal_id}:", responsaveis_selecionados)
 
         # Filtra os valores que estão selecionados para o deal_id
         nomes_selecionados = [
