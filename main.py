@@ -3,35 +3,35 @@ import requests
 
 app = Flask(__name__)
 
-# Função para pegar os responsáveis
+# Função para pegar os responsáveis do campo UF_CRM_1699475211222
 def get_responsaveis():
     url = 'https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/crm.deal.fields'
     headers = {
         'Content-Type': 'application/json'
     }
     
-    # Requisição GET para pegar os responsáveis (UF_CRM_1699475211222)
+    # Requisição GET para pegar os campos do CRM
     response = requests.get(url, headers=headers)
     
     if response.status_code == 200:
         data = response.json()
         responsaveis_field = data.get('result', {}).get('UF_CRM_1699475211222', {}).get('items', [])
         
-        # Extraindo os nomes dos responsáveis
+        # Extraindo os valores dos responsáveis
         nomes = [item['VALUE'] for item in responsaveis_field]
         return nomes
     else:
         raise Exception(f"Erro ao buscar responsáveis: {response.status_code} - {response.text}")
 
-# Função para atualizar o campo do negócio
+# Função para atualizar o campo 'UF_CRM_1732282217' do negócio
 def update_deal_field(deal_id, nomes):
-    url = f'https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/crm.deal.update'
+    url = f'https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/crm.deal.update.json'
     
-    # Dados para atualizar o campo 'UF_CRM_1732282217' com os nomes dos responsáveis
+    # Dados para atualizar o campo 'UF_CRM_1732282217' com os valores dos responsáveis
     data = {
         'ID': deal_id,
         'FIELDS': {
-            'UF_CRM_1732282217': ', '.join(nomes)
+            'UF_CRM_1732282217': ', '.join(nomes)  # Adiciona todos os nomes como uma string separada por vírgulas
         }
     }
     
@@ -53,10 +53,10 @@ def atualizar_responsaveis():
         return jsonify({"error": "deal_id é necessário"}), 400
     
     try:
-        # Pega os responsáveis
+        # Pega os responsáveis do campo UF_CRM_1699475211222
         nomes = get_responsaveis()
 
-        # Atualiza o campo 'UF_CRM_1732282217' do negócio
+        # Atualiza o campo 'UF_CRM_1732282217' do negócio com os nomes dos responsáveis
         result = update_deal_field(deal_id, nomes)
 
         return jsonify(result)
