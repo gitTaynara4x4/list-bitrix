@@ -58,4 +58,4 @@ def index():
     return jsonify({"message": "API para atualizar campos do Bitrix24."})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=8858)
