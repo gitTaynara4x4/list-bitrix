@@ -43,16 +43,14 @@ def update_deal_field(deal_id, nomes):
     else:
         raise Exception(f"Erro ao atualizar o negócio: {response.status_code} - {response.text}")
 
-@app.route('/atualizar-responsaveis', methods=['POST'])
+@app.route('/atualizar-responsaveis', methods=['GET'])
 def atualizar_responsaveis():
-    # Tenta obter os dados da requisição
-    data = request.json
+    # Pegando o parâmetro deal_id da query string
+    deal_id = request.args.get('deal_id')
     
-    # Verificar se os dados foram recebidos corretamente e se contém 'deal_id'
-    if not data or 'deal_id' not in data:
+    # Verificar se o deal_id foi passado na URL
+    if not deal_id:
         return jsonify({"error": "deal_id é necessário"}), 400
-    
-    deal_id = data['deal_id']
     
     try:
         # Pega os responsáveis
