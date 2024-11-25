@@ -20,7 +20,7 @@ def update_bitrix24_deal(deal_id, responsable_value):
     
     return response
 
-@app.route('/copy-field', methods=['GET'])
+@app.route('/copy-field', methods=['POST'])
 def copy_field():
     # Recebe o ID do negócio e o valor do responsável pela venda da URL
     deal_id = request.args.get('deal_id')
