@@ -39,4 +39,4 @@ def copy_field():
         return jsonify({"error": "Failed to update field", "details": response.json()}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8858)
+    app.run(host='0.0.0.0', port=8858)
