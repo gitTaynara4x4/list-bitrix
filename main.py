@@ -27,7 +27,6 @@ id_value_mapping = {
 
 # Função para obter e atualizar o card
 def atualizar_card(deal_id):
-    # Log para depuração
     app.logger.info(f"Buscando dados para o deal_id: {deal_id}")
 
     # Buscar o valor do campo UF_CRM_1699475211222 para o deal_id
@@ -35,15 +34,12 @@ def atualizar_card(deal_id):
     
     if response.status_code == 200:
         data = response.json()
-        # Verifica se o campo UF_CRM_1699475211222 existe no retorno
         uf_crm_value = data.get('result', {}).get('UF_CRM_1699475211222', None)
         
         if uf_crm_value:
-            # Verifica se o ID encontrado está na lista
             if str(uf_crm_value) in id_value_mapping:
                 nome = id_value_mapping[str(uf_crm_value)]
                 
-                # Atualizar o campo UF_CRM_1732282217 com o nome correspondente
                 update_data = {
                     "ID": deal_id,
                     "fields": {
@@ -70,10 +66,14 @@ def atualizar_card(deal_id):
         return {"message": "Erro ao buscar o card.", "status": "error"}
 
 # Endpoint para a API
-@app.route('/atualizar-responsaveis', methods=['GET'])
+@app.route('/atualizar-responsaveis', methods=['GET', 'POST'])
 def api_atualizar_card():
-    # Obter o 'deal_id' da query string
-    deal_id = request.args.get('deal_id')
+    # Obter o 'deal_id' da query string ou do corpo da requisição
+    if request.method == 'GET':
+        deal_id = request.args.get('deal_id')
+    elif request.method == 'POST':
+        data = request.get_json()
+        deal_id = data.get('deal_id', None)
 
     app.logger.info(f"Recebendo requisição para deal_id: {deal_id}")
 
@@ -83,6 +83,7 @@ def api_atualizar_card():
     
     result = atualizar_card(deal_id)
     return jsonify(result)
+
 
 # Iniciar o servidor na porta 8858
 if __name__ == '__main__':
