@@ -7,6 +7,7 @@ app = Flask(__name__)
 def update_bitrix24_deal(deal_id, responsable_value):
     url = "https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/"
     
+    # Dados para enviar para o Bitrix24
     data = {
         "ID": deal_id,
         "fields": {
@@ -26,14 +27,19 @@ def update_bitrix24_deal(deal_id, responsable_value):
     except Exception as e:
         return None, 500, str(e)
 
-@app.route('/copy-field', methods=['GET'])
+@app.route('/copy-field', methods=['POST'])
 def copy_field():
-    deal_id = request.args.get('deal_id')
-    responsable_value = request.args.get('responsable_value')
+    # Obtém o ID do negócio e o valor do responsável do corpo da requisição POST
+    data = request.get_json()
     
+    deal_id = data.get('deal_id')
+    responsable_value = data.get('responsable_value')
+    
+    # Verifica se os parâmetros estão presentes no corpo da requisição
     if not deal_id or not responsable_value:
         return jsonify({"error": "Missing parameters. 'deal_id' and 'responsable_value' are required."}), 400
     
+    # Chama a função para atualizar o campo no Bitrix24
     updated_data, status_code, error_message = update_bitrix24_deal(deal_id, responsable_value)
     
     if updated_data:
