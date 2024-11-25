@@ -28,10 +28,11 @@ def update_deal_field(deal_id, nomes):
     url = f'https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/crm.deal.update.json'
     
     # Dados para atualizar o campo 'UF_CRM_1732282217' com os valores dos responsáveis
+    # A string será os nomes separados por vírgula
     data = {
         'ID': deal_id,
         'FIELDS': {
-            'UF_CRM_1732282217': ', '.join(nomes)  # Adiciona todos os nomes como uma string separada por vírgulas
+            'UF_CRM_1732282217': ', '.join(nomes)  # Junta os nomes em uma string separada por vírgulas
         }
     }
     
