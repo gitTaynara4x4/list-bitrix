@@ -25,7 +25,7 @@ def get_responsaveis():
 
 # Função para atualizar o campo do negócio
 def update_deal_field(deal_id, nomes):
-    url = f'https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/crm.deal.update.json'
+    url = f'https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/crm.deal.update'
     
     # Dados para atualizar o campo 'UF_CRM_1732282217' com os nomes dos responsáveis
     data = {
