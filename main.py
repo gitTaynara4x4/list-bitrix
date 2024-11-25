@@ -43,7 +43,7 @@ def update_deal_field(deal_id, nomes):
     else:
         raise Exception(f"Erro ao atualizar o negócio: {response.status_code} - {response.text}")
 
-@app.route('/atualizar-responsaveis', methods=['GET'])
+@app.route('/atualizar-responsaveis', methods=['POST'])
 def atualizar_responsaveis():
     # Pegando o parâmetro deal_id da query string
     deal_id = request.args.get('deal_id')
