@@ -15,12 +15,25 @@ def update_bitrix24_deal(deal_id, responsable_value):
         }
     }
     
-    # Fazendo a requisição POST para o webhook do Bitrix24
-    response = requests.post(url, json=data)
+    try:
+        # Fazendo a requisição POST para o webhook do Bitrix24
+        response = requests.post(url, json=data)
+        
+        # Logando a resposta do Bitrix24 para depuração
+        print(f"Response from Bitrix24: {response.status_code} - {response.text}")
+        
+        # Verifica se a resposta foi bem-sucedida
+        if response.status_code == 200:
+            return response.json()
+        else:
+            # Retorna erro se a resposta não for 200
+            return None, response.status_code, response.text
     
-    return response
+    except Exception as e:
+        # Em caso de erro na requisição
+        return None, 500, str(e)
 
-@app.route('/copy-field', methods=['POST'])
+@app.route('/copy-field', methods=['GET'])
 def copy_field():
     # Recebe o ID do negócio e o valor do responsável pela venda da URL
     deal_id = request.args.get('deal_id')
@@ -31,12 +44,13 @@ def copy_field():
         return jsonify({"error": "Missing parameters. 'deal_id' and 'responsable_value' are required."}), 400
     
     # Chama a função para atualizar o campo no Bitrix24
-    response = update_bitrix24_deal(deal_id, responsable_value)
+    updated_data, status_code, error_message = update_bitrix24_deal(deal_id, responsable_value)
     
-    if response.status_code == 200:
+    if updated_data:
         return jsonify({"success": "Field updated successfully!"}), 200
     else:
-        return jsonify({"error": "Failed to update field", "details": response.json()}), 500
+        # Retorna o erro da requisição
+        return jsonify({"error": f"Failed to update field. Status code: {status_code}", "details": error_message}), status_code
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8858)
+    app.run(debug=True, host='0.0.0.0', port=8858)
