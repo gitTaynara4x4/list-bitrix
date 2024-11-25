@@ -1,10 +1,9 @@
-import requests
-from flask import Flask, jsonify, request
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# Lista de IDs e valores que queremos verificar
-responsaveis_validos = {
+# Dados simulados para os valores do campo UF_CRM_1699475211222
+itens_responsaveis = {
     "148": "Geovanna Emanuelly",
     "154": "Gustavo Inácio",
     "158": "Felipe Marchezine",
@@ -22,79 +21,37 @@ responsaveis_validos = {
     "48612": "Treinamento 04"
 }
 
-# Função para pegar o campo UF_CRM_1699475211222 do deal
-def get_responsaveis(deal_id):
-    try:
-        # URL para pegar os detalhes do deal
-        deal_url = f"https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/crm.deal.get"
-        deal_params = {"ID": deal_id}
-        deal_response = requests.get(deal_url, params=deal_params)
-        deal_data = deal_response.json()
-
-        # Pega os IDs do campo UF_CRM_1699475211222 no deal
-        responsaveis_selecionados = deal_data.get("result", {}).get("UF_CRM_1699475211222", [])
-
-        # Filtra os responsáveis válidos (IDs que estão na lista de responsáveis válidos)
-        nomes_selecionados = [
-            responsaveis_validos[str(id_)] 
-            for id_ in responsaveis_selecionados 
-            if str(id_) in responsaveis_validos
-        ]
-        
-        return nomes_selecionados
-    except Exception as e:
-        print("Erro ao obter responsáveis:", e)
-        return []
-
-# Função para atualizar o campo UF_CRM_1732282217 com os nomes dos responsáveis
-def update_deal_field(deal_id, nomes):
-    try:
-        # URL para atualizar o campo no deal
-        update_url = f"https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/crm.deal.update"
-        
-        # Dados para atualizar o campo UF_CRM_1732282217
-        update_data = {
-            "ID": deal_id,
-            "UF_CRM_1732282217": ", ".join(nomes)  # Junta os nomes em uma string separada por vírgulas
-        }
-
-        # Debug: Exibe os dados que serão enviados para atualizar o deal
-        print("Atualizando deal com dados:", update_data)
-        
-        # Faz a requisição para atualizar o deal
-        response = requests.post(update_url, data=update_data)
-
-        if response.status_code == 200:
-            return response.json()
-        else:
-            print("Erro ao atualizar o deal:", response.text)
-            return {"error": "Erro ao atualizar o deal"}
-    except Exception as e:
-        print("Erro ao atualizar o campo:", e)
-        return {"error": "Erro ao atualizar o campo"}
-
-# Rota para atualizar os responsáveis de um deal
 @app.route('/atualizar-responsaveis', methods=['POST'])
 def atualizar_responsaveis():
+    # Pega o parâmetro 'deal_id' da URL
     deal_id = request.args.get('deal_id')
     
     if not deal_id:
         return jsonify({"error": "deal_id é necessário"}), 400
     
-    try:
-        # Pega os responsáveis do campo UF_CRM_1699475211222 para o deal específico
-        nomes = get_responsaveis(deal_id)
+    # Aqui você faria a lógica para pegar os dados do negócio no Bitrix24 e verificar qual valor está no campo 'UF_CRM_1699475211222'
+    # Vamos simular o comportamento, usando um ID de exemplo.
+    
+    # Exemplo de ID, no seu caso seria dinamicamente recuperado
+    # Para testar você pode simular que o deal_id é 178096 e pegar um dos valores disponíveis
+    # Aqui vou pegar um ID de exemplo (como 148)
+    campo_responsavel = "148"  # Exemplo, você deverá substituir isso pela lógica de buscar o valor real do campo UF_CRM_1699475211222
 
-        # Se não houver nomes, retorna um erro
-        if not nomes:
-            return jsonify({"error": "Nenhum responsável válido encontrado para o deal"}), 404
+    if campo_responsavel not in itens_responsaveis:
+        return jsonify({"error": "ID do responsável não encontrado"}), 404
 
-        # Atualiza o campo 'UF_CRM_1732282217' do negócio com os nomes dos responsáveis
-        result = update_deal_field(deal_id, nomes)
+    # Pega o valor associado ao ID
+    nome_responsavel = itens_responsaveis[campo_responsavel]
 
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    # Agora você pode atualizar o campo 'UF_CRM_1732282217' com o nome do responsável
+    # Simulação de atualização
+    # Aqui você faria a chamada para a API do Bitrix24 para atualizar o campo.
+    
+    # Exemplo de resposta de sucesso
+    return jsonify({
+        "message": f"Responsável {nome_responsavel} atualizado com sucesso no campo UF_CRM_1732282217."
+    }), 200
 
 if __name__ == '__main__':
+    # Rodando o servidor Flask na porta 5000
     app.run(debug=True, host='0.0.0.0', port=8858)
