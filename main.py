@@ -27,6 +27,9 @@ id_value_mapping = {
 
 # Função para obter e atualizar o card
 def atualizar_card(deal_id):
+    # Log para depuração
+    app.logger.info(f"Buscando dados para o deal_id: {deal_id}")
+
     # Buscar o valor do campo UF_CRM_1699475211222 para o deal_id
     response = requests.post(f"{webhook_url}crm.deal.get.json", data={"ID": deal_id})
     
@@ -51,14 +54,19 @@ def atualizar_card(deal_id):
                 update_response = requests.post(f"{webhook_url}crm.deal.update.json", data=update_data)
                 
                 if update_response.status_code == 200:
+                    app.logger.info(f"Campo atualizado com sucesso para o deal_id: {deal_id}")
                     return {"message": "Campo atualizado com sucesso!", "status": "success"}
                 else:
+                    app.logger.error(f"Erro ao atualizar o card com deal_id: {deal_id}")
                     return {"message": "Erro ao atualizar o card.", "status": "error"}
             else:
+                app.logger.warning(f"O ID {uf_crm_value} não está na lista para o deal_id: {deal_id}")
                 return {"message": f"O ID {uf_crm_value} não está na lista.", "status": "error"}
         else:
+            app.logger.warning(f"Campo UF_CRM_1699475211222 não encontrado no card com deal_id: {deal_id}")
             return {"message": "Campo UF_CRM_1699475211222 não encontrado no card.", "status": "error"}
     else:
+        app.logger.error(f"Erro ao buscar o card com deal_id: {deal_id}")
         return {"message": "Erro ao buscar o card.", "status": "error"}
 
 # Endpoint para a API
@@ -67,7 +75,10 @@ def api_atualizar_card():
     # Obter o 'deal_id' da query string
     deal_id = request.args.get('deal_id')
 
+    app.logger.info(f"Recebendo requisição para deal_id: {deal_id}")
+
     if not deal_id:
+        app.logger.error("Parâmetro 'deal_id' ausente na requisição.")
         return jsonify({"message": "Parâmetro 'deal_id' é obrigatório.", "status": "error"}), 400
     
     result = atualizar_card(deal_id)
