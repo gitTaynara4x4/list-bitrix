@@ -86,4 +86,4 @@ def api_atualizar_card():
 
 # Iniciar o servidor na porta 8858
 if __name__ == '__main__':
-    app.run(debug=True, port=8858)
+    app.run(host='0.0.0.0', port=8858)
