@@ -1,68 +1,75 @@
-from flask import Flask, jsonify, request
 import requests
+from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
-# Função para pegar os responsáveis do campo UF_CRM_1699475211222
-def get_responsaveis():
-    url = 'https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/crm.deal.fields'
-    headers = {
-        'Content-Type': 'application/json'
-    }
+# Função para buscar os responsáveis do campo UF_CRM_1699475211222 de um deal
+def get_responsaveis(deal_id):
+    # URL para obter os campos do CRM
+    url = f"https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/crm.deal.fields"
     
-    # Requisição GET para pegar os campos do CRM
-    response = requests.get(url, headers=headers)
+    # Fazendo a requisição para pegar os dados do campo UF_CRM_1699475211222
+    response = requests.get(url)
+    data = response.json()
     
-    if response.status_code == 200:
-        data = response.json()
-        responsaveis_field = data.get('result', {}).get('UF_CRM_1699475211222', {}).get('items', [])
-        
-        # Extraindo os valores dos responsáveis
-        nomes = [item['VALUE'] for item in responsaveis_field]
-        return nomes
-    else:
-        raise Exception(f"Erro ao buscar responsáveis: {response.status_code} - {response.text}")
+    # Pega a lista de responsáveis (itens disponíveis)
+    responsaveis = data.get("result", {}).get("UF_CRM_1699475211222", {}).get("items", [])
+    
+    # Buscar os valores do campo UF_CRM_1699475211222 para o deal_id
+    deal_url = f"https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/crm.deal.get"
+    deal_params = {"ID": deal_id}
+    deal_response = requests.get(deal_url, params=deal_params)
+    
+    deal_data = deal_response.json()
+    
+    # Pegando os responsáveis do campo UF_CRM_1699475211222 do negócio
+    responsaveis_selecionados = deal_data.get("result", {}).get("UF_CRM_1699475211222", [])
+    
+    # Filtra os valores que estão selecionados para o deal_id
+    nomes_selecionados = [
+        responsavel["VALUE"] 
+        for responsavel in responsaveis 
+        if responsavel["ID"] in responsaveis_selecionados
+    ]
+    
+    return nomes_selecionados
 
-# Função para atualizar o campo 'UF_CRM_1732282217' do negócio
+# Função para atualizar o campo UF_CRM_1732282217 com os nomes dos responsáveis
 def update_deal_field(deal_id, nomes):
-    url = f'https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/crm.deal.update.json'
+    # URL para atualizar o campo
+    update_url = f"https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/crm.deal.update"
     
-    # Dados para atualizar o campo 'UF_CRM_1732282217' com os valores dos responsáveis
-    # A string será os nomes separados por vírgula
-    data = {
-        'ID': deal_id,
-        'FIELDS': {
-            'UF_CRM_1732282217': ', '.join(nomes)  # Junta os nomes em uma string separada por vírgulas
-        }
+    # Dados para a atualização
+    update_data = {
+        "ID": deal_id,
+        "UF_CRM_1732282217": ", ".join(nomes)  # Juntando os nomes selecionados em uma string
     }
     
-    # Requisição POST para atualizar o negócio
-    response = requests.post(url, json=data)
+    # Fazendo a requisição para atualizar o deal
+    response = requests.post(update_url, data=update_data)
     
     if response.status_code == 200:
         return response.json()
     else:
-        raise Exception(f"Erro ao atualizar o negócio: {response.status_code} - {response.text}")
+        return {"error": "Erro ao atualizar o deal"}
 
+# Rota para atualizar os responsáveis de um deal
 @app.route('/atualizar-responsaveis', methods=['POST'])
 def atualizar_responsaveis():
-    # Pegando o parâmetro deal_id da query string
     deal_id = request.args.get('deal_id')
     
-    # Verificar se o deal_id foi passado na URL
     if not deal_id:
         return jsonify({"error": "deal_id é necessário"}), 400
     
     try:
-        # Pega os responsáveis do campo UF_CRM_1699475211222
-        nomes = get_responsaveis()
+        # Pega os responsáveis do campo UF_CRM_1699475211222 para o deal específico
+        nomes = get_responsaveis(deal_id)
 
         # Atualiza o campo 'UF_CRM_1732282217' do negócio com os nomes dos responsáveis
         result = update_deal_field(deal_id, nomes)
 
         return jsonify(result)
     except Exception as e:
-        # Caso ocorra algum erro nas funções de buscar ou atualizar, retorna o erro
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
