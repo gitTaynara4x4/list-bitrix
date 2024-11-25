@@ -3,88 +3,69 @@ import requests
 
 app = Flask(__name__)
 
-# Webhook URL do Bitrix24
+# Lista de IDs e seus valores correspondentes
+items = [
+    {"ID": "148", "VALUE": "Geovanna Emanuelly"},
+    {"ID": "154", "VALUE": "Gustavo Inácio"},
+    {"ID": "158", "VALUE": "Felipe Marchezine"},
+    {"ID": "34874", "VALUE": "Taynara Francine"},
+    {"ID": "43180", "VALUE": "Sabrina Emanuelle"},
+    {"ID": "48604", "VALUE": "Ian Henrique"},
+    {"ID": "48618", "VALUE": "Tiago Martins"},
+    {"ID": "48674", "VALUE": "Caio Sales"},
+    {"ID": "49718", "VALUE": "Italo Almeida"},
+    {"ID": "48678", "VALUE": "Jéssica Hellen"},
+    {"ID": "49722", "VALUE": "Laisa Reis"},
+    {"ID": "34794", "VALUE": "Treinamento 01"},
+    {"ID": "48596", "VALUE": "Treinamento 02"},
+    {"ID": "48610", "VALUE": "Treinamento 03"},
+    {"ID": "48612", "VALUE": "Treinamento 04"}
+]
+
+# Webhook do Bitrix24
 webhook_url = "https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/"
 
-# Mapeamento de IDs para valores
-id_value_mapping = {
-    "148": "Geovanna Emanuelly",
-    "154": "Gustavo Inácio",
-    "158": "Felipe Marchezine",
-    "34874": "Taynara Francine",
-    "43180": "Sabrina Emanuelle",
-    "48604": "Ian Henrique",
-    "48618": "Tiago Martins",
-    "48674": "Caio Sales",
-    "49718": "Italo Almeida",
-    "48678": "Jéssica Hellen",
-    "49722": "Laisa Reis",
-    "34794": "Treinamento 01",
-    "48596": "Treinamento 02",
-    "48610": "Treinamento 03",
-    "48612": "Treinamento 04"
-}
-
-# Função para obter e atualizar o card
-def atualizar_card(deal_id):
-    app.logger.info(f"Buscando dados para o deal_id: {deal_id}")
-
-    # Buscar o valor do campo UF_CRM_1699475211222 para o deal_id
-    response = requests.post(f"{webhook_url}crm.deal.get.json", data={"ID": deal_id})
-    
+# Função para atualizar o card no Bitrix24
+def update_deal(deal_id, value):
+    url = f"{webhook_url}crm.deal.update.json"
+    data = {
+        "ID": deal_id,
+        "FIELDS": {
+            "UF_CRM_1732282217": value
+        }
+    }
+    response = requests.post(url, json=data)
     if response.status_code == 200:
-        data = response.json()
-        uf_crm_value = data.get('result', {}).get('UF_CRM_1699475211222', None)
-        
-        if uf_crm_value:
-            if str(uf_crm_value) in id_value_mapping:
-                nome = id_value_mapping[str(uf_crm_value)]
-                
-                update_data = {
-                    "ID": deal_id,
-                    "fields": {
-                        "UF_CRM_1732282217": nome
-                    }
-                }
-                
-                update_response = requests.post(f"{webhook_url}crm.deal.update.json", data=update_data)
-                
-                if update_response.status_code == 200:
-                    app.logger.info(f"Campo atualizado com sucesso para o deal_id: {deal_id}")
-                    return {"message": "Campo atualizado com sucesso!", "status": "success"}
-                else:
-                    app.logger.error(f"Erro ao atualizar o card com deal_id: {deal_id}")
-                    return {"message": "Erro ao atualizar o card.", "status": "error"}
-            else:
-                app.logger.warning(f"O ID {uf_crm_value} não está na lista para o deal_id: {deal_id}")
-                return {"message": f"O ID {uf_crm_value} não está na lista.", "status": "error"}
-        else:
-            app.logger.warning(f"Campo UF_CRM_1699475211222 não encontrado no card com deal_id: {deal_id}")
-            return {"message": "Campo UF_CRM_1699475211222 não encontrado no card.", "status": "error"}
+        return {"status": "success", "message": f"Card {deal_id} atualizado com sucesso!"}
     else:
-        app.logger.error(f"Erro ao buscar o card com deal_id: {deal_id}")
-        return {"message": "Erro ao buscar o card.", "status": "error"}
+        return {"status": "error", "message": f"Erro ao atualizar o card {deal_id}: {response.status_code}"}
 
-# Endpoint para a API
-@app.route('/atualizar-responsaveis', methods=['GET', 'POST'])
-def api_atualizar_card():
-    # Obter o 'deal_id' da query string ou do corpo da requisição
-    if request.method == 'GET':
-        deal_id = request.args.get('deal_id')
-    elif request.method == 'POST':
-        data = request.get_json()
-        deal_id = data.get('deal_id', None)
+# Função para verificar o ID e atualizar o campo
+def check_and_update_card(deal_id, uf_value):
+    # Verificar se o valor de UF_CRM_1699475211222 corresponde a um dos valores da lista
+    for item in items:
+        if item["ID"] == uf_value:
+            return update_deal(deal_id, item["VALUE"])
+    return {"status": "error", "message": "ID não encontrado na lista de valores."}
 
-    app.logger.info(f"Recebendo requisição para deal_id: {deal_id}")
-
-    if not deal_id:
-        app.logger.error("Parâmetro 'deal_id' ausente na requisição.")
-        return jsonify({"message": "Parâmetro 'deal_id' é obrigatório.", "status": "error"}), 400
+# Endpoint da API que recebe o ID do card e o valor de UF_CRM_1699475211222
+@app.route('/update_card', methods=['POST'])
+def update_card():
+    # Receber dados do JSON enviado na requisição
+    data = request.get_json()
     
-    result = atualizar_card(deal_id)
+    # Validar os campos
+    if 'deal_id' not in data or 'uf_value' not in data:
+        return jsonify({"status": "error", "message": "Parâmetros 'deal_id' e 'uf_value' são obrigatórios."}), 400
+
+    deal_id = data['deal_id']
+    uf_value = str(data['uf_value'])  # Garantir que o valor seja uma string
+
+    # Chamar a função de verificação e atualização
+    result = check_and_update_card(deal_id, uf_value)
+    
     return jsonify(result)
 
-
-# Iniciar o servidor na porta 8858
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8858)
+# Rodar o servidor Flask
+if __name__ == "__main__":
+    app.run(port=8858, host ='0.0.0.0')
