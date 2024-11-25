@@ -1,9 +1,13 @@
 from flask import Flask, request, jsonify
+import requests
 
 app = Flask(__name__)
 
-# Dados simulados para os valores do campo UF_CRM_1699475211222
-itens_responsaveis = {
+# Webhook URL do Bitrix24
+webhook_url = "https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yjx5bg/"
+
+# Mapeamento de IDs para valores
+id_value_mapping = {
     "148": "Geovanna Emanuelly",
     "154": "Gustavo Inácio",
     "158": "Felipe Marchezine",
@@ -21,37 +25,54 @@ itens_responsaveis = {
     "48612": "Treinamento 04"
 }
 
-@app.route('/atualizar-responsaveis', methods=['POST'])
-def atualizar_responsaveis():
-    # Pega o parâmetro 'deal_id' da URL
+# Função para obter e atualizar o card
+def atualizar_card(deal_id):
+    # Buscar o valor do campo UF_CRM_1699475211222 para o deal_id
+    response = requests.post(f"{webhook_url}crm.deal.get.json", data={"ID": deal_id})
+    
+    if response.status_code == 200:
+        data = response.json()
+        # Verifica se o campo UF_CRM_1699475211222 existe no retorno
+        uf_crm_value = data.get('result', {}).get('UF_CRM_1699475211222', None)
+        
+        if uf_crm_value:
+            # Verifica se o ID encontrado está na lista
+            if str(uf_crm_value) in id_value_mapping:
+                nome = id_value_mapping[str(uf_crm_value)]
+                
+                # Atualizar o campo UF_CRM_1732282217 com o nome correspondente
+                update_data = {
+                    "ID": deal_id,
+                    "fields": {
+                        "UF_CRM_1732282217": nome
+                    }
+                }
+                
+                update_response = requests.post(f"{webhook_url}crm.deal.update.json", data=update_data)
+                
+                if update_response.status_code == 200:
+                    return {"message": "Campo atualizado com sucesso!", "status": "success"}
+                else:
+                    return {"message": "Erro ao atualizar o card.", "status": "error"}
+            else:
+                return {"message": f"O ID {uf_crm_value} não está na lista.", "status": "error"}
+        else:
+            return {"message": "Campo UF_CRM_1699475211222 não encontrado no card.", "status": "error"}
+    else:
+        return {"message": "Erro ao buscar o card.", "status": "error"}
+
+# Endpoint para a API
+@app.route('/atualizar-responsaveis', methods=['GET'])
+def api_atualizar_card():
+    # Obter o 'deal_id' da query string
     deal_id = request.args.get('deal_id')
-    
+
     if not deal_id:
-        return jsonify({"error": "deal_id é necessário"}), 400
+        return jsonify({"message": "Parâmetro 'deal_id' é obrigatório.", "status": "error"}), 400
     
-    # Aqui você faria a lógica para pegar os dados do negócio no Bitrix24 e verificar qual valor está no campo 'UF_CRM_1699475211222'
-    # Vamos simular o comportamento, usando um ID de exemplo.
-    
-    # Exemplo de ID, no seu caso seria dinamicamente recuperado
-    # Para testar você pode simular que o deal_id é 178096 e pegar um dos valores disponíveis
-    # Aqui vou pegar um ID de exemplo (como 148)
-    campo_responsavel = "148"  # Exemplo, você deverá substituir isso pela lógica de buscar o valor real do campo UF_CRM_1699475211222
+    result = atualizar_card(deal_id)
+    return jsonify(result)
 
-    if campo_responsavel not in itens_responsaveis:
-        return jsonify({"error": "ID do responsável não encontrado"}), 404
-
-    # Pega o valor associado ao ID
-    nome_responsavel = itens_responsaveis[campo_responsavel]
-
-    # Agora você pode atualizar o campo 'UF_CRM_1732282217' com o nome do responsável
-    # Simulação de atualização
-    # Aqui você faria a chamada para a API do Bitrix24 para atualizar o campo.
-    
-    # Exemplo de resposta de sucesso
-    return jsonify({
-        "message": f"Responsável {nome_responsavel} atualizado com sucesso no campo UF_CRM_1732282217."
-    }), 200
-
+# Iniciar o servidor na porta 8858
 if __name__ == '__main__':
-    # Rodando o servidor Flask na porta 5000
-    app.run(debug=True, host='0.0.0.0', port=8858)
+    app.run(debug=True, port=8858)
