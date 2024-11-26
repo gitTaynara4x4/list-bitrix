@@ -58,8 +58,8 @@ def transferir_dados():
         }
     }
 
-@app.route('/transferirbko', methods=['POST'])
-def transferir_dados ():
+@app.route('/transferir-bko', methods=['POST'])
+def transferir_dados_bko ():
     id_deal = request.json.get('ID_DEAL') if request.json else request.args.get('ID_DEAL')
 
     if not id_deal:
