@@ -58,6 +58,49 @@ def transferir_dados():
         }
     }
 
+@app.route('/transferir-bko', methods=['POST'])
+def transferir_dados ():
+    id_deal = request.json.get('ID_DEAL') if request.json else request.args.get('ID_DEAL')
+
+    if not id_deal:
+        return jsonify({"erro": "Campo 'ID_DEAL' não encontrado"}), 400
+    
+    url_busca = f"{WEBHOOK_URL}/crm.deal.get.json"
+    params_busca = {"ID": id_deal}
+
+    try: 
+        resposta_busca = requests.get(url_busca, params=params_busca)
+        resposta_busca.raise_for_status()
+    except requests.RequestException as e:
+        return jsonify({"erro": f"Erro ao buscar dados do deal:{str(e)}"}), 500
+    
+    dados_deal = resposta_busca.json()#UF_CRM_1700663313965 
+
+    if 'result' not in dados_deal or 'UF_CRM_1700663313965' not in dados_deal['result']:
+        return jsonify({"erro":"Campo 'Bko - Responsavél pela venda não encontrado"}), 400
+    
+    valor = dados_deal['result']['UF_CRM_1700663313965']
+
+    valores_map = {
+        "222": "Rafael  dos Santos",
+        "226": "Rafael Bruce",
+        "326": "Juan Cesar",
+        "34884": "Taynara Francine",
+        "40868": "Mariah Victoria",
+        "48670": "Barbara Virginia",
+        "48686": "João Fontes"
+    }
+
+    valor = valores_map.get(valor, valor)
+    url_atualiza = f"{WEBHOOK_URL}/crm.deal.update.json"
+    params_atualiza = {
+        "ID": id_deal,
+        "fields": {
+            "UF_CRM_1732303914": valor
+        }
+    }
+
+
     try:
         resposta_atualiza = requests.post(url_atualiza, json=params_atualiza)
         resposta_atualiza.raise_for_status()
