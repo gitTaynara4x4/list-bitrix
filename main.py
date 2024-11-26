@@ -58,8 +58,17 @@ def transferir_dados():
         }
     }
 
+    try:
+        resposta_atualiza = requests.post(url_atualiza, json=params_atualiza)
+        resposta_atualiza.raise_for_status()
+    except requests.RequestException as e:
+        return jsonify({"erro": f"Erro ao atualizar o campo do deal: {str(e)}"}), 500
+
+    return jsonify({"sucesso": "Dados transferidos com sucesso"}), 200
+
+
 @app.route('/transferir-bko', methods=['POST'])
-def transferir_dados_bko ():
+def transferir_dados_bko():
     id_deal = request.json.get('ID_DEAL') if request.json else request.args.get('ID_DEAL')
 
     if not id_deal:
@@ -74,15 +83,15 @@ def transferir_dados_bko ():
     except requests.RequestException as e:
         return jsonify({"erro": f"Erro ao buscar dados do deal:{str(e)}"}), 500
     
-    dados_deal = resposta_busca.json()#UF_CRM_1700663313965 
+    dados_deal = resposta_busca.json()
 
     if 'result' not in dados_deal or 'UF_CRM_1700663313965' not in dados_deal['result']:
-        return jsonify({"erro":"Campo 'Bko - Responsavél pela venda não encontrado"}), 400
+        return jsonify({"erro":"Campo 'Bko - Responsavél pela venda' não encontrado"}), 400
     
     valor = dados_deal['result']['UF_CRM_1700663313965']
 
     valores_map = {
-        "222": "Rafael  dos Santos",
+        "222": "Rafael dos Santos",
         "226": "Rafael Bruce",
         "326": "Juan Cesar",
         "34884": "Taynara Francine",
@@ -99,7 +108,6 @@ def transferir_dados_bko ():
             "UF_CRM_1732303914": valor
         }
     }
-
 
     try:
         resposta_atualiza = requests.post(url_atualiza, json=params_atualiza)
