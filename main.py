@@ -7,14 +7,12 @@ WEBHOOK_URL = "https://marketingsolucoes.bitrix24.com.br/rest/35002/7a2nuej815yj
 
 @app.route('/transferir', methods=['POST'])
 def transferir_dados():
-    dados = request.json
+    # Obter o ID_REGISTRO tanto do corpo JSON quanto da query string
+    id_registro = request.json.get('ID_REGISTRO') if request.json else request.args.get('ID_REGISTRO')
 
-    # Verificar se o campo 'ID_REGISTRO' (ID do deal) foi enviado
-    if not dados or 'ID_REGISTRO' not in dados:
+    # Verificar se o ID_REGISTRO foi enviado
+    if not id_registro:
         return jsonify({"erro": "Campo 'ID_REGISTRO' não encontrado"}), 400
-
-    # ID do deal que será utilizado
-    id_registro = dados['ID_REGISTRO']
 
     # 1. Buscar o valor do campo 'UF_CRM_1732303914' do deal
     url_busca = f"{WEBHOOK_URL}/crm.deal.get.json"
