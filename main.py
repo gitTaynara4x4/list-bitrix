@@ -14,7 +14,7 @@ BASE_URL_API_BITRIX = os.getenv('BASE_URL_API_BITRIX')
 
 
 
-WEBHOOK_URL = f"{BASE_URL_API_BITRIX}/{PROFILE}/{CODIGO_BITRIX}/bizproc.workflow.start"
+WEBHOOK_URL = f"{BASE_URL_API_BITRIX}/{PROFILE}/{CODIGO_BITRIX}"
 
 @app.route('/transferir', methods=['POST'])
 def transferir_dados():
